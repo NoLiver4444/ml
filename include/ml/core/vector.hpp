@@ -69,6 +69,12 @@ public:
 
     void pop_back();
 
+    T* begin() noexcept;
+    const T* begin() const noexcept;
+
+    T* end() noexcept;
+    const T* end() const noexcept;
+
     void print() const;
 };
 

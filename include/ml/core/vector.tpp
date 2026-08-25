@@ -426,3 +426,23 @@ void Vector<T>::destroy_range(T* data, std::size_t first, std::size_t last) noex
         data[first].~T();
     }
 }
+
+template <typename T>
+T* Vector<T>::begin() noexcept {
+    return data_;
+}
+
+template <typename T>
+const T* Vector<T>::begin() const noexcept {
+    return data_;
+}
+
+template <typename T>
+T* Vector<T>::end() noexcept {
+    return data_ + size_;
+}
+
+template <typename T>
+const T* Vector<T>::end() const noexcept {
+    return data_ + size_;
+}

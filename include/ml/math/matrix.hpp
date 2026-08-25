@@ -27,7 +27,7 @@ public:
     Matrix& operator=(const Matrix& other);
     Matrix& operator=(Matrix&& other) noexcept;
 
-    ~Matrix();
+    ~Matrix() = default;
 
     std::size_t rows() const noexcept;
     std::size_t cols() const noexcept;
