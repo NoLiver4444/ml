@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 
-#include "../../include/ml/math/vector.hpp"
+#include "../../include/ml/core/vector.hpp"
 
 class ThrowOnCopy {
 public:
