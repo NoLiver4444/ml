@@ -1,0 +1,12 @@
+* text=auto
+
+*.cpp text
+*.hpp text
+*.tpp text
+*.h text
+*.cmake text
+CMakeLists.txt text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
