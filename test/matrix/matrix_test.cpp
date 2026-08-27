@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <ml/math/matrix.hpp>
 
 #include <stdexcept>
@@ -661,3 +662,263 @@ TEST(MatrixTypeTest, StringTranspose) {
     EXPECT_EQ(result(2, 0), "c");
     EXPECT_EQ(result(2, 1), "f");
 }
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeSum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}, {2, 1}};
+
+    Matrix<int> result = matrix_1 + matrix_2;
+
+    EXPECT_EQ(result(0, 0), 5);
+    EXPECT_EQ(result(0, 1), 5);
+    EXPECT_EQ(result(1, 0), 5);
+    EXPECT_EQ(result(1, 1), 5);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeEqSum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}, {2, 1}};
+
+    matrix_1 += matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 5);
+    EXPECT_EQ(matrix_1(0, 1), 5);
+    EXPECT_EQ(matrix_1(1, 0), 5);
+    EXPECT_EQ(matrix_1(1, 1), 5);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeSub) {
+    Matrix<int> matrix_1{{5, 5}, {5, 5}};
+    Matrix<int> matrix_2{{1, 2}, {3, 4}};
+
+    Matrix<int> result = matrix_1 - matrix_2;
+
+    EXPECT_EQ(result(0, 0), 4);
+    EXPECT_EQ(result(0, 1), 3);
+    EXPECT_EQ(result(1, 0), 2);
+    EXPECT_EQ(result(1, 1), 1);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeEqSub) {
+    Matrix<int> matrix_1{{5, 5}, {5, 5}};
+    Matrix<int> matrix_2{{1, 2}, {3, 4}};
+
+    matrix_1 -= matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 4);
+    EXPECT_EQ(matrix_1(0, 1), 3);
+    EXPECT_EQ(matrix_1(1, 0), 2);
+    EXPECT_EQ(matrix_1(1, 1), 1);
+}
+
+TEST(MatrixOperatorTest, MatricesOfDifferentSizesSum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}};
+
+    EXPECT_THROW(Matrix<int> result = matrix_1 + matrix_2;, std::invalid_argument);
+}
+
+TEST(MatrixOperatorTest, MatricesOfDifferentSizesEqSum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}};
+
+    EXPECT_THROW(matrix_1 += matrix_2;, std::invalid_argument);
+}
+
+TEST(MatrixOperatorTest, MatricesOfDifferentSizesSub) {
+    Matrix<int> matrix_1{{5, 5}, {5, 5}};
+    Matrix<int> matrix_2{{1, 2}};
+
+    EXPECT_THROW(Matrix<int> result = matrix_1 - matrix_2;, std::invalid_argument);
+}
+
+TEST(MatrixOperatorTest, MatricesOfDifferentSizesEqSub) {
+    Matrix<int> matrix_1{{5, 5}, {5, 5}};
+    Matrix<int> matrix_2{{1, 2}};
+
+    EXPECT_THROW(matrix_1 -= matrix_2;, std::invalid_argument);
+}
+
+TEST(MatrixOperatorTest, MatricesOfZeroSizesSum) {
+    Matrix<int> matrix_1;
+    Matrix<int> matrix_2;
+
+    Matrix<int> result = matrix_1 + matrix_2;
+
+    EXPECT_TRUE(result.empty());
+    EXPECT_EQ(result.rows(), 0);
+    EXPECT_EQ(result.cols(), 0);
+}
+
+TEST(MatrixOperatorTest, MatricesOfZeroSizesEqSum) {
+    Matrix<int> matrix_1;
+    Matrix<int> matrix_2;
+
+    matrix_1 += matrix_2;
+
+    EXPECT_TRUE(matrix_1.empty());
+    EXPECT_EQ(matrix_1.rows(), 0);
+    EXPECT_EQ(matrix_1.cols(), 0);
+}
+
+TEST(MatrixOperatorTest, MatricesOfZeroSizesSub) {
+    Matrix<int> matrix_1;
+    Matrix<int> matrix_2;
+
+    Matrix<int> result = matrix_1 - matrix_2;
+
+    EXPECT_TRUE(result.empty());
+    EXPECT_EQ(result.rows(), 0);
+    EXPECT_EQ(result.cols(), 0);
+}
+
+TEST(MatrixOperatorTest, MatricesOfZeroSizesEqSub) {
+    Matrix<int> matrix_1;
+    Matrix<int> matrix_2;
+
+    matrix_1 -= matrix_2;
+
+    EXPECT_TRUE(matrix_1.empty());
+    EXPECT_EQ(matrix_1.rows(), 0);
+    EXPECT_EQ(matrix_1.cols(), 0);
+}
+
+TEST(MatrixOperatorTest, MatricesOfOneSizesSum) {
+    Matrix<int> matrix_1{{1}};
+    Matrix<int> matrix_2{{2}};
+
+    Matrix<int> result = matrix_1 + matrix_2;
+
+    EXPECT_EQ(result(0, 0), 3);
+}
+
+TEST(MatrixOperatorTest, MatricesOfOneSizesEqSum) {
+    Matrix<int> matrix_1{{1}};
+    Matrix<int> matrix_2{{2}};
+
+    matrix_1 += matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 3);
+}
+
+TEST(MatrixOperatorTest, MatricesOfOneSizesSub) {
+    Matrix<int> matrix_1{{2}};
+    Matrix<int> matrix_2{{1}};
+
+    Matrix<int> result = matrix_1 - matrix_2;
+
+    EXPECT_EQ(result(0, 0), 1);
+}
+
+TEST(MatrixOperatorTest, MatricesOfOneSizesEqSub) {
+    Matrix<int> matrix_1{{2}};
+    Matrix<int> matrix_2{{1}};
+
+    matrix_1 -= matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 1);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheOneNSizeSum) {
+    Matrix<int> matrix_1{{1, 2}};
+    Matrix<int> matrix_2{{4, 3}};
+
+    Matrix<int> result = matrix_1 + matrix_2;
+
+    EXPECT_EQ(result(0, 0), 5);
+    EXPECT_EQ(result(0, 1), 5);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheOneNSizeEqSum) {
+    Matrix<int> matrix_1{{1, 2}};
+    Matrix<int> matrix_2{{4, 3}};
+
+    matrix_1 += matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 5);
+    EXPECT_EQ(matrix_1(0, 1), 5);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheOneNSizeSub) {
+    Matrix<int> matrix_1{{5, 5}};
+    Matrix<int> matrix_2{{1, 2}};
+
+    Matrix<int> result = matrix_1 - matrix_2;
+
+    EXPECT_EQ(result(0, 0), 4);
+    EXPECT_EQ(result(0, 1), 3);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheOneNSizeEqSub) {
+    Matrix<int> matrix_1{{5, 5}};
+    Matrix<int> matrix_2{{1, 2}};
+
+    matrix_1 -= matrix_2;
+
+    EXPECT_EQ(matrix_1(0, 0), 4);
+    EXPECT_EQ(matrix_1(0, 1), 3);
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeAZeroSum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{0, 0}, {0, 0}};
+
+    Matrix<int> result = matrix_1 + matrix_2;
+
+    EXPECT_EQ(result(0, 0), matrix_1(0, 0));
+    EXPECT_EQ(result(0, 1), matrix_1(0, 1));
+    EXPECT_EQ(result(1, 0), matrix_1(1, 0));
+    EXPECT_EQ(result(1, 1), matrix_1(1, 1));
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeAZeroSub) {
+    Matrix<int> matrix_1{{5, 5}, {5, 5}};
+    Matrix<int> matrix_2{{0, 0}, {0, 0}};
+
+    Matrix<int> result = matrix_1 - matrix_2;
+
+    EXPECT_EQ(result(0, 0), matrix_1(0, 0));
+    EXPECT_EQ(result(0, 1), matrix_1(0, 1));
+    EXPECT_EQ(result(1, 0), matrix_1(1, 0));
+    EXPECT_EQ(result(1, 1), matrix_1(1, 1));
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeABEqBASum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}, {2, 1}};
+
+    Matrix<int> result_1 = matrix_1 + matrix_2;
+    Matrix<int> result_2 = matrix_2 + matrix_1;
+
+    EXPECT_EQ(result_1(0, 0), result_2(0, 0));
+    EXPECT_EQ(result_1(0, 1), result_2(0, 1));
+    EXPECT_EQ(result_1(1, 0), result_2(1, 0));
+    EXPECT_EQ(result_1(1, 1), result_2(1, 1));
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeABCEqBCASum) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}, {2, 1}};
+    Matrix<int> matrix_3{{10, 10}, {10, 10}};
+
+    Matrix<int> result_1 = (matrix_1 + matrix_2) + matrix_3;
+    Matrix<int> result_2 = (matrix_2 + matrix_3) + matrix_1;
+
+    EXPECT_EQ(result_1(0, 0), result_2(0, 0));
+    EXPECT_EQ(result_1(0, 1), result_2(0, 1));
+    EXPECT_EQ(result_1(1, 0), result_2(1, 0));
+    EXPECT_EQ(result_1(1, 1), result_2(1, 1));
+}
+
+TEST(MatrixOperatorTest, MatricesOfTheSameSizeABSumBSubEqA) {
+    Matrix<int> matrix_1{{1, 2}, {3, 4}};
+    Matrix<int> matrix_2{{4, 3}, {2, 1}};
+
+    Matrix<int> result = (matrix_1 + matrix_2) - matrix_2;
+
+    EXPECT_EQ(result(0, 0), matrix_1(0, 0));
+    EXPECT_EQ(result(0, 1), matrix_1(0, 1));
+    EXPECT_EQ(result(1, 0), matrix_1(1, 0));
+    EXPECT_EQ(result(1, 1), matrix_1(1, 1));
+}
+

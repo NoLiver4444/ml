@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <stdexcept>
 #include <utility>
 #include "matrix.hpp"
 
@@ -169,4 +170,95 @@ void Matrix<T>::swap(Matrix& other) noexcept {
     this->data_.swap(other.data_);
     std::swap(this->rows_, other.rows_);
     std::swap(this->cols_, other.cols_);
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::operator+(const Matrix& other) const {
+    Matrix<T> result(*this);
+    result += other;
+
+    return result;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::operator-(const Matrix& other) const {
+    Matrix<T> result(*this);
+    result -= other;
+
+    return result;
+}
+
+template <typename T>
+Matrix<T>& Matrix<T>::operator+=(const Matrix& other) {
+    if (this->rows_ != other.rows_ || this->cols_ != other.cols_) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        this->data_[i] += other.data_[i];
+    }
+
+    return *this;
+}
+
+template <typename T>
+Matrix<T>& Matrix<T>::operator-=(const Matrix& other) {
+    if (this->rows_ != other.rows_ || this->cols_ != other.cols_) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        this->data_[i] -= other.data_[i];
+    }
+
+    return *this;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::operator*(const T& scalar) const {
+    Matrix<T> result(*this);
+    result *= scalar;
+
+    return result;
+}
+
+template <typename T>
+Matrix<T> operator*(const T& scalar, const Matrix<T>& matrix)
+{
+    return matrix * scalar;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::operator/(const T& scalar) const {
+    Matrix<T> result(*this);
+    result /= scalar;
+
+    return result;
+}
+
+template <typename T>
+Matrix<T>& Matrix<T>::operator*=(const T& scalar) {
+    for (auto &i : data_) {
+        i *= scalar;
+    }
+
+    return *this;
+}
+
+template <typename T>
+Matrix<T>& Matrix<T>::operator/=(const T& scalar) {
+    if (scalar == T{}) {
+        throw std::domain_error("Division by zero");
+    }
+
+    for (auto &i : data_) {
+        i /= scalar;
+    }
+
+    return *this;
+}
+
+template <typename T>
+Matrix<T> Matrix<T>::matmul(const Matrix& other) const {
+
 }
