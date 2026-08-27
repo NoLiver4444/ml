@@ -249,7 +249,12 @@ TEST(MatrixMoveTest, MoveAssignment) {
 TEST(MatrixMoveTest, SelfMoveAssignment) {
     Matrix<int> matrix{{1, 2}, {3, 4}};
 
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wself-move"
+
     matrix = std::move(matrix);
+
+    #pragma GCC diagnostic pop
 
     EXPECT_EQ(matrix.rows(), 2);
     EXPECT_EQ(matrix.cols(), 2);
@@ -922,3 +927,134 @@ TEST(MatrixOperatorTest, MatricesOfTheSameSizeABSumBSubEqA) {
     EXPECT_EQ(result(1, 1), matrix_1(1, 1));
 }
 
+TEST(MatrixMatMulTest, CorrecrMatMulofDifferentSizes) {
+    Matrix<int> matrix_1{{5, 9, 2}, {3, 6, 1}};
+    Matrix<int> matrix_2{{1, 5}, {2, 3}, {1, 2}};
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_EQ(result.rows(), 2);
+    EXPECT_EQ(result.cols(), 2);
+
+    EXPECT_EQ(result(0, 0), 25);
+    EXPECT_EQ(result(0, 1), 56);
+    EXPECT_EQ(result(1, 0), 16);
+    EXPECT_EQ(result(1, 1), 35);
+}
+
+TEST(MatrixMatMulTest, CorrecrMatMulSameSize) {
+    Matrix<int> matrix_1{{5, 9}, {3, 6}};
+    Matrix<int> matrix_2{{1, 5}, {2, 3}};
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_EQ(result.rows(), 2);
+    EXPECT_EQ(result.cols(), 2);
+
+    EXPECT_EQ(result(0, 0), 23);
+    EXPECT_EQ(result(0, 1), 52);
+    EXPECT_EQ(result(1, 0), 15);
+    EXPECT_EQ(result(1, 1), 33);
+}
+
+TEST(MatrixMatMulTest, ZeroSizeMatMul) {
+    Matrix<int> matrix_1;
+    Matrix<int> matrix_2;
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_TRUE(result.empty());
+    EXPECT_EQ(result.rows(), 0);
+    EXPECT_EQ(result.cols(), 0);
+}
+
+TEST(MatrixMatMulTest, OneSizeMatMul) {
+    Matrix<int> matrix_1{{5}};
+    Matrix<int> matrix_2{{8}};
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_EQ(result.rows(), 1);
+    EXPECT_EQ(result.cols(), 1);
+    EXPECT_EQ(result(0, 0), 40);
+}
+
+TEST(MatrixMatMulTest, WrongMatMul) {
+    Matrix<int> matrix_1{{5, 4}, {1, 2}};
+    Matrix<int> matrix_2{{8}};
+
+    EXPECT_THROW(Matrix<int> result = matrix_1.matmul(matrix_2);, std::invalid_argument);
+}
+
+TEST(MatrixMatMulTest, ZeroMatrixMatMul) {
+    Matrix<int> matrix_1{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    Matrix<int> matrix_2{{4, 2, 1}, {5, -2, 9}, {1, 3, 6}};
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_EQ(result.rows(), 3);
+    EXPECT_EQ(result.cols(), 3);
+    EXPECT_EQ(result, matrix_1);
+}
+
+TEST(MatrixMatMulTest, IdentityMatrixMatMul) {
+    Matrix<int> matrix_1{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    Matrix<int> matrix_2{{4, 2, 1}, {5, -2, 9}, {1, 3, 6}};
+
+    Matrix<int> result = matrix_1.matmul(matrix_2);
+
+    EXPECT_EQ(result.rows(), 3);
+    EXPECT_EQ(result.cols(), 3);
+    EXPECT_EQ(result, matrix_2);
+}
+
+TEST(MatrixMatMulTest, IdentityMatrixMatMul2) {
+    Matrix<int> matrix_1{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    Matrix<int> matrix_2{{4, 2, 1}, {5, -2, 9}, {1, 3, 6}};
+
+    Matrix<int> result = matrix_2.matmul(matrix_1);
+
+    EXPECT_EQ(result.rows(), 3);
+    EXPECT_EQ(result.cols(), 3);
+    EXPECT_EQ(result, matrix_2);
+}
+
+TEST(MatrixMatMulTest, TransposeMatMul) {
+    Matrix<int> matrix_1{{5, 9, 2}, {3, 6, 1}};
+    Matrix<int> matrix_2{{1, 5, 9}, {2, 3, 6}, {1, 2, 12}};
+
+    Matrix<int> result1 = matrix_1.matmul(matrix_2);
+    result1 = result1.transpose();
+
+    Matrix<int> result2 = matrix_2.transpose().matmul(matrix_1.transpose());
+
+    EXPECT_EQ(result1.rows(), result2.rows());
+    EXPECT_EQ(result1.cols(), result2.cols());
+    EXPECT_EQ(result1, result2);    
+}
+
+TEST(MatrixMatMulTest, AssociativityMatMul) {
+    Matrix<int> matrix_1{{5, 9, 2}, {3, 6, 1}};
+    Matrix<int> matrix_2{{1, 5, 9}, {2, 3, 6}, {1, 2, 12}};
+    Matrix<int> matrix_3{{1, 2, 3, 4}, {4, 3, 2, 1}, {5, 3, 9, 8}};
+
+    Matrix<int> result1 = matrix_1.matmul(matrix_2);
+    result1 = result1.matmul(matrix_3);
+
+    Matrix<int> result2 = matrix_2.matmul(matrix_3);
+    result2 = matrix_1.matmul(result2);
+
+    EXPECT_EQ(result1.rows(), result2.rows());
+    EXPECT_EQ(result1.cols(), result2.cols());
+    EXPECT_EQ(result1, result2);
+}
+
+TEST(MatrixMatMulTest, DoesNotModifyTheOriginalMatrices) {
+    Matrix<int> a{{1, 2}, {3, 4}};
+    Matrix<int> b{{5, 6}, {7, 8}};
+
+    auto c = a.matmul(b);
+
+    EXPECT_EQ(a(0, 0), 1);
+    EXPECT_EQ(b(0, 0), 5);
+}

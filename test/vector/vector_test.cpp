@@ -134,7 +134,12 @@ TEST(VectorTest, SelfCopyAssignment) {
 TEST(VectorTest, SelfMoveAssignment) {
     Vector<int> v = {1, 2, 3, 4, 5};
 
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wself-move"
+
     v = std::move(v);
+
+    #pragma GCC diagnostic pop
 
     ASSERT_EQ(v.size(), 5);
     for (std::size_t i = 0; i < 5; ++i) {
@@ -553,7 +558,7 @@ TEST(VectorResizeTest, StringTypeDefaultValue) {
 struct Point {
     int x, y;
     Point() : x(0), y(0) {}
-    Point(int x, int y) : x(x), y(y) {}
+    Point(int x_value, int y_value) : x(x_value), y(y_value) {}
 
     bool operator==(const Point& other) const {
         return x == other.x && y == other.y;
@@ -1216,7 +1221,7 @@ struct EmplaceProbe {
     int x;
     std::string text;
 
-    EmplaceProbe(int x, std::string text) : x(x), text(std::move(text)) {}
+    EmplaceProbe(int x_value, std::string text_value) : x(x_value), text(std::move(text_value)) {}
 };
 
 TEST(VectorEmplaceBackEdgeTest, ConstructsObjectFromArguments) {
@@ -1263,7 +1268,7 @@ struct LifetimeTracker {
         ++constructions;
     }
 
-    explicit LifetimeTracker(int value) : value(value) {
+    explicit LifetimeTracker(int initial_value) : value(initial_value) {
         ++alive;
         ++constructions;
     }
@@ -1479,7 +1484,7 @@ struct ThrowingCopy {
         ++alive;
     }
 
-    explicit ThrowingCopy(int value) : value(value) {
+    explicit ThrowingCopy(int initial_value) : value(initial_value) {
         ++alive;
     }
 

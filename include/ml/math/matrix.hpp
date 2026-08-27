@@ -65,6 +65,9 @@ public:
     Matrix& operator/=(const T& scalar);
 
     Matrix matmul(const Matrix& other) const;
+
+    bool operator==(const Matrix& other) const;
+    bool operator!=(const Matrix& other) const;
 };
 
 #include "matrix.tpp"

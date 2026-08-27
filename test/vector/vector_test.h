@@ -18,7 +18,7 @@ public:
         ++alive;
     }
 
-    explicit ThrowOnCopy(int value) : value(value) {
+    explicit ThrowOnCopy(int initial_value) : value(initial_value) {
         ++alive;
     }
 

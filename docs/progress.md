@@ -16,10 +16,10 @@
 
 ## Matrix
 
-- [ ] Constructors
-- [ ] operator()
-- [ ] Transpose
-- [ ] Matrix Multiplication
+- [x] Constructors
+- [x] operator()
+- [x] Transpose
+- [x] Matrix Multiplication
 
 ---
 

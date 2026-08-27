@@ -32,7 +32,7 @@ Everything is implemented manually, including memory management, linear algebra,
 ## Containers
 
 - [x] Vector
-- [ ] Matrix
+- [x] Matrix
 - [ ] Tensor
 
 ## Linear Algebra

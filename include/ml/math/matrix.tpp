@@ -223,8 +223,7 @@ Matrix<T> Matrix<T>::operator*(const T& scalar) const {
 }
 
 template <typename T>
-Matrix<T> operator*(const T& scalar, const Matrix<T>& matrix)
-{
+Matrix<T> operator*(const T& scalar, const Matrix<T>& matrix) {
     return matrix * scalar;
 }
 
@@ -238,7 +237,7 @@ Matrix<T> Matrix<T>::operator/(const T& scalar) const {
 
 template <typename T>
 Matrix<T>& Matrix<T>::operator*=(const T& scalar) {
-    for (auto &i : data_) {
+    for (auto& i : data_) {
         i *= scalar;
     }
 
@@ -251,7 +250,7 @@ Matrix<T>& Matrix<T>::operator/=(const T& scalar) {
         throw std::domain_error("Division by zero");
     }
 
-    for (auto &i : data_) {
+    for (auto& i : data_) {
         i /= scalar;
     }
 
@@ -260,5 +259,43 @@ Matrix<T>& Matrix<T>::operator/=(const T& scalar) {
 
 template <typename T>
 Matrix<T> Matrix<T>::matmul(const Matrix& other) const {
+    if (this->cols_ != other.rows_) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+    }
 
+    Matrix<T> result(this->rows_, other.cols_);
+
+    for (std::size_t i = 0; i < this->rows_; ++i) {
+        for (std::size_t j = 0; j < other.cols_; ++j) {
+            T sum{};
+
+            for (std::size_t k = 0; k < cols_; ++k) {
+                sum += (*this)(i, k) * other(k, j);
+            }
+
+            result(i, j) = sum;
+        }
+    }
+
+    return result;
+}
+
+template <typename T>
+bool Matrix<T>::operator==(const Matrix& other) const {
+    if (this->rows_ != other.rows_ || this->cols_ != other.cols_) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        if (this->data_[i] != other.data_[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <typename T>
+bool Matrix<T>::operator!=(const Matrix& other) const {
+    return !(*this == other);
 }

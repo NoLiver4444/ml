@@ -13,24 +13,46 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Для compile_commands.json
-# Полезно для clangd, IDE, статического анализа
+# compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 
 # ============================================================
 # Options
 # ============================================================
 
 option(ML_ENABLE_WARNINGS "Enable strict compiler warnings" ON)
-option(ML_ENABLE_SANITIZERS "Enable sanitizers in Debug builds" ON)
+option(ML_ENABLE_SANITIZERS "Enable sanitizers" OFF)
 option(ML_ENABLE_TESTS "Build tests" ON)
+option(ML_ENABLE_COVERAGE "Enable code coverage" OFF)
+option(ML_ENABLE_CLANG_TIDY "Enable clang-tidy" OFF)
 
+# ============================================================
+# clang-tidy
+#
+# IMPORTANT:
+# This must be configured BEFORE targets are created.
+# ============================================================
+
+if(ML_ENABLE_CLANG_TIDY)
+
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+
+    if(NOT CLANG_TIDY_EXE)
+        message(FATAL_ERROR "clang-tidy not found")
+    endif()
+
+    set(CMAKE_CXX_CLANG_TIDY
+        ${CLANG_TIDY_EXE}
+        -checks=bugprone-*,performance-*,modernize-*,readability-*
+        --header-filter=${CMAKE_CURRENT_SOURCE_DIR}/include/ml/.*
+    )
+
+endif()
 
 # ============================================================
 # Main ML library
 #
-# Пока твои Vector/Matrix/Tensor являются header-only.
+# Vector / Matrix / future Tensor are currently header-only.
 # ============================================================
 
 add_library(ml INTERFACE)
@@ -45,7 +67,6 @@ target_compile_features(ml
         cxx_std_17
 )
 
-
 # ============================================================
 # Compiler warnings
 # ============================================================
@@ -59,10 +80,8 @@ if(ML_ENABLE_WARNINGS)
                 -Wall
                 -Wextra
                 -Wpedantic
-
                 -Wconversion
                 -Wsign-conversion
-
                 -Wshadow
                 -Wnon-virtual-dtor
                 -Wold-style-cast
@@ -86,13 +105,11 @@ if(ML_ENABLE_WARNINGS)
 
 endif()
 
-
 # ============================================================
 # Sanitizers
 #
-# Только Debug.
-# AddressSanitizer + UndefinedBehaviorSanitizer.
-# Очень полезно для собственного Vector/Tensor.
+# ASan + UBSan
+# Recommended only for Debug builds.
 # ============================================================
 
 if(
@@ -115,6 +132,28 @@ if(
 
 endif()
 
+# ============================================================
+# Coverage
+# ============================================================
+
+if(
+    ML_ENABLE_COVERAGE
+    AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"
+)
+
+    target_compile_options(ml
+        INTERFACE
+            --coverage
+            -O0
+            -g
+    )
+
+    target_link_options(ml
+        INTERFACE
+            --coverage
+    )
+
+endif()
 
 # ============================================================
 # Main executable
@@ -128,7 +167,6 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE
         ml
 )
-
 
 # ============================================================
 # Tests
@@ -144,15 +182,22 @@ if(ML_ENABLE_TESTS)
 
         FetchContent_Declare(
             googletest
-            URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+            URL
+                https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
             DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         )
 
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        set(
+            gtest_force_shared_crt
+            ON
+            CACHE BOOL ""
+            FORCE
+        )
 
         FetchContent_MakeAvailable(googletest)
 
-        file(GLOB_RECURSE TEST_SOURCES
+        file(
+            GLOB_RECURSE TEST_SOURCES
             CONFIGURE_DEPENDS
             "${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp"
         )
@@ -175,7 +220,10 @@ if(ML_ENABLE_TESTS)
 
         else()
 
-            message(STATUS "No test files found in test/")
+            message(
+                STATUS
+                "No test files found in test/"
+            )
 
         endif()
 
@@ -183,22 +231,23 @@ if(ML_ENABLE_TESTS)
 
 endif()
 
-
 # ============================================================
 # clang-format
 # ============================================================
 
-find_program(CLANG_FORMAT clang-format)
+find_program(CLANG_FORMAT_EXE NAMES clang-format)
 
-if(CLANG_FORMAT)
+if(CLANG_FORMAT_EXE)
 
-    file(GLOB_RECURSE ALL_SOURCE_FILES
+    file(
+        GLOB_RECURSE ALL_SOURCE_FILES
         CONFIGURE_DEPENDS
 
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h"
 
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/*.tpp"
@@ -212,25 +261,31 @@ if(CLANG_FORMAT)
 
         add_custom_target(format
             COMMAND
-                ${CLANG_FORMAT}
+                ${CLANG_FORMAT_EXE}
                 -style=file
                 -i
                 ${ALL_SOURCE_FILES}
 
-            COMMENT "Formatting source files"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT
+                "Formatting source files"
+
+            WORKING_DIRECTORY
+                ${CMAKE_CURRENT_SOURCE_DIR}
         )
 
         add_custom_target(format-check
             COMMAND
-                ${CLANG_FORMAT}
+                ${CLANG_FORMAT_EXE}
                 -style=file
                 --dry-run
                 --Werror
                 ${ALL_SOURCE_FILES}
 
-            COMMENT "Checking source formatting"
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT
+                "Checking source formatting"
+
+            WORKING_DIRECTORY
+                ${CMAKE_CURRENT_SOURCE_DIR}
         )
 
     endif()
@@ -244,24 +299,6 @@ else()
 
 endif()
 
-
-option(ML_ENABLE_COVERAGE "Enable code coverage" OFF)
-
-if(ML_ENABLE_COVERAGE
-    AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-
-    target_compile_options(ml INTERFACE
-        --coverage
-        -O0
-        -g
-    )
-
-    target_link_options(ml INTERFACE
-        --coverage
-    )
-
-endif()
-
 # ============================================================
 # Run tests
 # ============================================================
@@ -269,73 +306,109 @@ endif()
 if(TARGET ml_tests)
 
     add_custom_target(check
-        COMMAND ${CMAKE_CTEST_COMMAND}
+        COMMAND
+            ${CMAKE_CTEST_COMMAND}
             --output-on-failure
-        DEPENDS ml_tests
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Building and running all tests"
+
+        DEPENDS
+            ml_tests
+
+        WORKING_DIRECTORY
+            ${CMAKE_BINARY_DIR}
+
+        COMMENT
+            "Building and running all tests"
     )
 
 endif()
 
 # ============================================================
-# Coverage
+# Coverage report
 # ============================================================
 
 if(ML_ENABLE_COVERAGE)
 
-    find_program(GCOVR gcovr)
+    find_program(GCOVR_EXE NAMES gcovr)
 
-    if(GCOVR AND TARGET ml_tests)
+    if(GCOVR_EXE AND TARGET ml_tests)
 
-        set(COVERAGE_DIR
+        set(
+            COVERAGE_DIR
             ${CMAKE_BINARY_DIR}/coverage
         )
 
         add_custom_target(coverage
 
-            # Создаём папку
-            COMMAND ${CMAKE_COMMAND}
-                -E make_directory
+            COMMAND
+                ${CMAKE_COMMAND}
+                -E
+                make_directory
                 ${COVERAGE_DIR}
 
-            # Сначала запускаем тесты
-            COMMAND ${CMAKE_CTEST_COMMAND}
+            COMMAND
+                ${CMAKE_CTEST_COMMAND}
                 --output-on-failure
 
-            # Генерируем HTML
-            COMMAND ${GCOVR}
-                --root ${CMAKE_SOURCE_DIR}
-                --filter ${CMAKE_SOURCE_DIR}/include
-                --filter ${CMAKE_SOURCE_DIR}/src
-                --exclude ${CMAKE_SOURCE_DIR}/test
+            COMMAND
+                ${GCOVR_EXE}
+                --root
+                ${CMAKE_SOURCE_DIR}
+
+                --filter
+                ${CMAKE_SOURCE_DIR}/include
+
+                --filter
+                ${CMAKE_SOURCE_DIR}/src
+
+                --exclude
+                ${CMAKE_SOURCE_DIR}/test
+
                 --html-details
-                --output ${COVERAGE_DIR}/index.html
 
-            DEPENDS ml_tests
+                --output
+                ${COVERAGE_DIR}/index.html
 
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            DEPENDS
+                ml_tests
 
-            COMMENT "Running tests and generating coverage report"
+            WORKING_DIRECTORY
+                ${CMAKE_BINARY_DIR}
+
+            COMMENT
+                "Running tests and generating coverage report"
+        )
+
+    elseif(NOT GCOVR_EXE)
+
+        message(
+            STATUS
+            "gcovr not found: coverage target disabled"
         )
 
     endif()
 
 endif()
 
+# ============================================================
+# All checks
+# ============================================================
+
 if(TARGET ml_tests)
 
     add_custom_target(all-checks
 
-        COMMAND ${CMAKE_CTEST_COMMAND}
+        COMMAND
+            ${CMAKE_CTEST_COMMAND}
             --output-on-failure
 
         DEPENDS
             ml_tests
 
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY
+            ${CMAKE_BINARY_DIR}
 
-        COMMENT "Running project checks"
+        COMMENT
+            "Running project checks"
     )
 
 endif()
