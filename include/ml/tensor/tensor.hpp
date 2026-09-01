@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <type_traits>
 
 #include <ml/core/vector.hpp>
 
@@ -13,19 +14,16 @@ private:
 
     void compute_strides();
 
-    std::size_t compute_offset(
-        const Vector<std::size_t>& indices
-    ) const;
+    std::size_t compute_offset(const Vector<std::size_t>& indices) const;
+
+    std::size_t compute_size(const Vector<std::size_t>& shape);
 
 public:
     Tensor();
 
     explicit Tensor(const Vector<std::size_t>& shape);
 
-    Tensor(
-        const Vector<std::size_t>& shape,
-        const T& value
-    );
+    Tensor(const Vector<std::size_t>& shape, const T& value);
 
     Tensor(const Tensor&) = default;
     Tensor(Tensor&&) noexcept = default;
@@ -65,14 +63,9 @@ public:
 
     void flatten();
 
-    Tensor transpose(
-        std::size_t dim0,
-        std::size_t dim1
-    ) const;
+    Tensor transpose(std::size_t dim0, std::size_t dim1) const;
 
-    Tensor permute(
-        const Vector<std::size_t>& dims
-    ) const;
+    Tensor permute(const Vector<std::size_t>& dims) const;
 
     void fill(const T& value);
 

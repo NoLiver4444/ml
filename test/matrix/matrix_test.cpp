@@ -249,12 +249,12 @@ TEST(MatrixMoveTest, MoveAssignment) {
 TEST(MatrixMoveTest, SelfMoveAssignment) {
     Matrix<int> matrix{{1, 2}, {3, 4}};
 
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wself-move"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 
     matrix = std::move(matrix);
 
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 
     EXPECT_EQ(matrix.rows(), 2);
     EXPECT_EQ(matrix.cols(), 2);
@@ -1030,7 +1030,7 @@ TEST(MatrixMatMulTest, TransposeMatMul) {
 
     EXPECT_EQ(result1.rows(), result2.rows());
     EXPECT_EQ(result1.cols(), result2.cols());
-    EXPECT_EQ(result1, result2);    
+    EXPECT_EQ(result1, result2);
 }
 
 TEST(MatrixMatMulTest, AssociativityMatMul) {

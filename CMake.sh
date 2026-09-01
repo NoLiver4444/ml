@@ -11,3 +11,5 @@ cmake --build --preset tidy
 
 cmake --preset coverage
 cmake --build --preset coverage --target coverage
+
+cmake --build --preset debug --target format

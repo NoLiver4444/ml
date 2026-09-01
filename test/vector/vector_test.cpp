@@ -134,12 +134,12 @@ TEST(VectorTest, SelfCopyAssignment) {
 TEST(VectorTest, SelfMoveAssignment) {
     Vector<int> v = {1, 2, 3, 4, 5};
 
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wself-move"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 
     v = std::move(v);
 
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 
     ASSERT_EQ(v.size(), 5);
     for (std::size_t i = 0; i < 5; ++i) {
