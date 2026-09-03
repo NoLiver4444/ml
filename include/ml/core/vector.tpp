@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include <utility>
 #include "vector.hpp"
 
 template <typename T>
@@ -445,4 +444,24 @@ T* Vector<T>::end() noexcept {
 template <typename T>
 const T* Vector<T>::end() const noexcept {
     return data_ + size_;
+}
+
+template <typename T>
+bool Vector<T>::operator==(const Vector& other) const {
+    if (size_ != other.size_) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i < size_; ++i) {
+        if (data_[i] != other[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+template <typename T>
+bool Vector<T>::operator!=(const Vector& other) const {
+    return !(*this == other);
 }

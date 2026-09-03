@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 #include "ml/core/vector.hpp"
 #include "tensor.hpp"
 
@@ -31,10 +32,7 @@ void Tensor<T>::compute_strides() {
 }
 
 template <typename T>
-std::size_t Tensor<T>::compute_offset(
-    const Vector<std::size_t>& indices
-) const
-{
+std::size_t Tensor<T>::compute_offset(const Vector<std::size_t>& indices) const {
     std::size_t offset = 0;
 
     for (std::size_t i = 0; i < indices.size(); ++i) {
@@ -50,6 +48,18 @@ std::size_t Tensor<T>::compute_size(const Vector<std::size_t>& shape) {
 
     for (const auto dimension : shape) {
         result *= dimension;
+    }
+
+    return result;
+}
+
+template <typename T>
+Vector<std::size_t> Tensor<T>::find_place(std::size_t linear) const {
+    Vector<std::size_t> result(ndim());
+
+    for (std::size_t i = 0; i < ndim(); ++i) {
+        result[i] = linear / strides_[i];
+        linear %= strides_[i];
     }
 
     return result;
@@ -82,21 +92,18 @@ bool Tensor<T>::empty() const noexcept {
 
 template <typename T>
 T* Tensor<T>::data() noexcept {
-    return data_;
+    return data_.data();
 }
 
 template <typename T>
 const T* Tensor<T>::data() const noexcept {
-    return data_;
+    return data_.data();
 }
 
 template <typename T>
 template <typename... Indices>
 T& Tensor<T>::operator()(Indices... indices) {
-    static_assert(
-        (std::is_integral_v<Indices> && ...),
-        "Tensor indices must be integral"
-    );
+    static_assert((std::is_integral_v<Indices> && ...), "Tensor indices must be integral");
 
     Vector<std::size_t> v{static_cast<std::size_t>(indices)...};
 
@@ -106,11 +113,8 @@ T& Tensor<T>::operator()(Indices... indices) {
 template <typename T>
 template <typename... Indices>
 const T& Tensor<T>::operator()(Indices... indices) const {
-    static_assert(
-        (std::is_integral_v<Indices> && ...),
-        "Tensor indices must be integral"
-    );
-    
+    static_assert((std::is_integral_v<Indices> && ...), "Tensor indices must be integral");
+
     Vector<std::size_t> v{static_cast<std::size_t>(indices)...};
 
     return data_[compute_offset(v)];
@@ -119,10 +123,7 @@ const T& Tensor<T>::operator()(Indices... indices) const {
 template <typename T>
 template <typename... Indices>
 T& Tensor<T>::at(Indices... indices) {
-    static_assert(
-        (std::is_integral_v<Indices> && ...),
-        "Tensor indices must be integral"
-    );
+    static_assert((std::is_integral_v<Indices> && ...), "Tensor indices must be integral");
 
     Vector<std::size_t> v{static_cast<std::size_t>(indices)...};
 
@@ -142,10 +143,7 @@ T& Tensor<T>::at(Indices... indices) {
 template <typename T>
 template <typename... Indices>
 const T& Tensor<T>::at(Indices... indices) const {
-    static_assert(
-        (std::is_integral_v<Indices> && ...),
-        "Tensor indices must be integral"
-    );
+    static_assert((std::is_integral_v<Indices> && ...), "Tensor indices must be integral");
 
     Vector<std::size_t> v{static_cast<std::size_t>(indices)...};
 
@@ -160,4 +158,56 @@ const T& Tensor<T>::at(Indices... indices) const {
     }
 
     return data_[compute_offset(v)];
+}
+
+template <typename T>
+void Tensor<T>::reshape(const Vector<std::size_t>& new_shape) {
+    if (size() != compute_size(new_shape)) {
+        throw std::invalid_argument("The size of the new shape does not match the original size");
+    }
+
+    shape_ = new_shape;
+
+    compute_strides();
+}
+
+template <typename T>
+template <typename... Dims>
+void Tensor<T>::reshape(Dims... dims) {
+    static_assert((std::is_integral_v<Dims> && ...), "Tensor dimensions must be integral");
+
+    Vector<std::size_t> new_shape{static_cast<std::size_t>(dims)...};
+
+    reshape(new_shape);
+}
+
+template <typename T>
+void Tensor<T>::flatten() {
+    reshape(size());
+}
+
+template <typename T>
+Tensor<T> Tensor<T>::transpose(std::size_t dim0, std::size_t dim1) const {
+    if (dim0 >= shape_.size() || dim1 >= shape_.size()) {
+        throw std::out_of_range("Wrong index");
+    }
+
+    Vector<std::size_t> new_shape(shape_);
+
+    std::swap(new_shape[dim0], new_shape[dim1]);
+
+    Tensor<T> new_tensor(new_shape);
+
+    for (std::size_t linear = 0; linear < size(); ++linear) {
+        Vector<std::size_t> old_place = find_place(linear);
+        Vector<std::size_t> new_place = old_place;
+
+        std::swap(new_place[dim0], new_place[dim1]);
+
+        auto new_linear = new_tensor.compute_offset(new_place);
+
+        new_tensor.data_[new_linear] = data_[linear];
+    }
+
+    return new_tensor;
 }

@@ -18,6 +18,8 @@ private:
 
     std::size_t compute_size(const Vector<std::size_t>& shape);
 
+    Vector<std::size_t> find_place(std::size_t linear) const;
+
 public:
     Tensor();
 

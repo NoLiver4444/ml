@@ -75,6 +75,9 @@ public:
     T* end() noexcept;
     const T* end() const noexcept;
 
+    bool operator==(const Vector& other) const;
+    bool operator!=(const Vector& other) const;
+
     void print() const;
 };
 
