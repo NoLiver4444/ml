@@ -211,3 +211,65 @@ Tensor<T> Tensor<T>::transpose(std::size_t dim0, std::size_t dim1) const {
 
     return new_tensor;
 }
+
+template <typename T>
+Tensor<T> Tensor<T>::permute(const Vector<std::size_t>& dims) const {
+    if (dims.size() != ndim()) {
+        throw std::invalid_argument("Permutation rank does not match tensor rank");
+    }
+    
+    Vector<std::size_t> new_shape(shape_.size());
+    Vector<bool> used(ndim(), false);
+
+    for (std::size_t i = 0; i < dims.size(); ++i) {
+        if (dims[i] >= shape_.size()) {
+            throw std::out_of_range("Permutation dimension out of range");
+        }
+
+        if (used[dims[i]]) {
+            throw std::invalid_argument("Permutation contains duplicate dimensions");
+        }
+
+        used[dims[i]] = true;
+        new_shape[i] = shape_[dims[i]];
+    }
+
+    Tensor<T> new_tensor(new_shape);
+
+    for (std::size_t linear = 0; linear < size(); ++linear) {
+        Vector<std::size_t> old_place = find_place(linear);
+        Vector<std::size_t> new_place(ndim());
+
+        for (std::size_t i = 0; i < ndim(); ++i) {
+            new_place[i] = old_place[dims[i]];
+        }
+
+        const auto new_linear = new_tensor.compute_offset(new_place);
+
+        new_tensor.data_[new_linear] = data_[linear];
+    }
+
+    return new_tensor;
+}
+
+template <typename T>
+void Tensor<T>::fill(const T& value) {
+    for (auto &i : data_) {
+        i = value;
+    }
+}
+
+template <typename T>
+Tensor<T> Tensor<T>::operator+(const Tensor& other) const {
+    if (this->shape_ != other.shape_) {
+        throw std::invalid_argument("Tensor shapes do not match");
+    }
+
+    Tensor<T> new_tensor(shape_);
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        new_tensor.data_[i] = this->data_[i] + other.data_[i];
+    }
+
+    return new_tensor;
+}

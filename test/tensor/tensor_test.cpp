@@ -8,18 +8,27 @@
 #include <utility>
 #include "ml/core/vector.hpp"
 
-TEST(TensorConstructorTest, DefaultConstructor) {
+// ============================================================================
+// Constructors
+// ============================================================================
+
+TEST(TensorConstructorTest, DefaultConstructor)
+{
     Tensor<int> tensor;
 
-    EXPECT_EQ(tensor.shape().size(), 0);
-    EXPECT_EQ(tensor.strides().size(), 0);
-    EXPECT_EQ(tensor.size(), 0);
     EXPECT_EQ(tensor.ndim(), 0);
+    EXPECT_EQ(tensor.size(), 0);
     EXPECT_TRUE(tensor.empty());
+    EXPECT_EQ(tensor.data(), nullptr);
 }
 
-TEST(TensorConstructorTest, ConstructorNSize) {
+TEST(TensorConstructorTest, ShapeConstructor)
+{
     Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_EQ(tensor.ndim(), 3);
+    EXPECT_EQ(tensor.size(), 24);
+    EXPECT_FALSE(tensor.empty());
 
     EXPECT_EQ(tensor.shape()[0], 2);
     EXPECT_EQ(tensor.shape()[1], 3);
@@ -28,11 +37,150 @@ TEST(TensorConstructorTest, ConstructorNSize) {
     EXPECT_EQ(tensor.strides()[0], 12);
     EXPECT_EQ(tensor.strides()[1], 4);
     EXPECT_EQ(tensor.strides()[2], 1);
+}
 
-    EXPECT_EQ(tensor.size(), 24);
-    EXPECT_EQ(tensor.ndim(), 3);
+TEST(TensorConstructorTest, ShapeAndValueConstructor)
+{
+    Tensor<int> tensor({2, 3}, 7);
 
+    EXPECT_EQ(tensor.ndim(), 2);
+    EXPECT_EQ(tensor.size(), 6);
+
+    EXPECT_EQ(tensor.shape()[0], 2);
+    EXPECT_EQ(tensor.shape()[1], 3);
+
+    EXPECT_EQ(tensor.strides()[0], 3);
+    EXPECT_EQ(tensor.strides()[1], 1);
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor.data()[i], 7);
+    }
+}
+
+TEST(TensorConstructorTest, ScalarTensor)
+{
+    Tensor<int> tensor({}, 42);
+
+    EXPECT_EQ(tensor.ndim(), 0);
+    EXPECT_EQ(tensor.size(), 1);
     EXPECT_FALSE(tensor.empty());
+
+    EXPECT_EQ(tensor.data()[0], 42);
+}
+
+TEST(TensorConstructorTest, EmptyDimensionTensor)
+{
+    Tensor<int> tensor({2, 0, 3});
+
+    EXPECT_EQ(tensor.ndim(), 3);
+    EXPECT_EQ(tensor.size(), 0);
+    EXPECT_TRUE(tensor.empty());
+
+    EXPECT_EQ(tensor.shape()[0], 2);
+    EXPECT_EQ(tensor.shape()[1], 0);
+    EXPECT_EQ(tensor.shape()[2], 3);
+}
+
+// ============================================================================
+// at()
+// ============================================================================
+
+TEST(TensorAtTest, Read1D)
+{
+    Tensor<int> tensor({4});
+
+    tensor(0) = 10;
+    tensor(1) = 20;
+    tensor(2) = 30;
+    tensor(3) = 40;
+
+    EXPECT_EQ(tensor.at(0), 10);
+    EXPECT_EQ(tensor.at(1), 20);
+    EXPECT_EQ(tensor.at(2), 30);
+    EXPECT_EQ(tensor.at(3), 40);
+}
+
+TEST(TensorAtTest, Read3D)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    tensor(1, 2, 3) = 99;
+
+    EXPECT_EQ(tensor.at(1, 2, 3), 99);
+}
+
+TEST(TensorAtTest, WriteAccess)
+{
+    Tensor<int> tensor({2, 2});
+
+    tensor.at(1, 1) = 42;
+
+    EXPECT_EQ(tensor(1, 1), 42);
+}
+
+TEST(TensorAtTest, ConstAccess)
+{
+    Tensor<int> tensor({2, 2});
+
+    tensor(0, 1) = 55;
+
+    const Tensor<int>& const_tensor = tensor;
+
+    EXPECT_EQ(const_tensor.at(0, 1), 55);
+}
+
+TEST(TensorAtTest, WrongNumberOfIndicesThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.at(1, 2),
+        std::invalid_argument
+    );
+
+    EXPECT_THROW(
+        tensor.at(1, 2, 3, 4),
+        std::invalid_argument
+    );
+}
+
+TEST(TensorAtTest, FirstDimensionOutOfRangeThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.at(2, 0, 0),
+        std::out_of_range
+    );
+}
+
+TEST(TensorAtTest, MiddleDimensionOutOfRangeThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.at(0, 3, 0),
+        std::out_of_range
+    );
+}
+
+TEST(TensorAtTest, LastDimensionOutOfRangeThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.at(0, 0, 4),
+        std::out_of_range
+    );
+}
+
+TEST(TensorAtTest, LastValidElement)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    tensor.at(1, 2, 3) = 123;
+
+    EXPECT_EQ(tensor.at(1, 2, 3), 123);
 }
 
 TEST(TensorTransposeTest, Transpose2D) {
@@ -239,4 +387,514 @@ TEST(TensorTransposeTest, DoubleTransposeReturnsOriginalTensor) {
     for (std::size_t i = 0; i < tensor.size(); ++i) {
         EXPECT_EQ(result.data()[i], tensor.data()[i]);
     }
+}
+
+// ============================================================================
+// Reshape
+// ============================================================================
+
+TEST(TensorReshapeTest, BasicReshape)
+{
+    Tensor<int> tensor({2, 3});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = value++;
+    }
+
+    tensor.reshape(3, 2);
+
+    EXPECT_EQ(tensor.shape()[0], 3);
+    EXPECT_EQ(tensor.shape()[1], 2);
+
+    EXPECT_EQ(tensor.size(), 6);
+
+    EXPECT_EQ(tensor(0, 0), 1);
+    EXPECT_EQ(tensor(0, 1), 2);
+    EXPECT_EQ(tensor(1, 0), 3);
+    EXPECT_EQ(tensor(1, 1), 4);
+    EXPECT_EQ(tensor(2, 0), 5);
+    EXPECT_EQ(tensor(2, 1), 6);
+}
+
+TEST(TensorReshapeTest, ReshapeDoesNotChangeData)
+{
+    Tensor<int> tensor({2, 3});
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = static_cast<int>(i + 1);
+    }
+
+    int* old_data = tensor.data();
+
+    tensor.reshape(6);
+
+    EXPECT_EQ(tensor.data(), old_data);
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(
+            tensor.data()[i],
+            static_cast<int>(i + 1)
+        );
+    }
+}
+
+TEST(TensorReshapeTest, WrongSizeThrows)
+{
+    Tensor<int> tensor({2, 3});
+
+    EXPECT_THROW(
+        tensor.reshape(2, 4),
+        std::invalid_argument
+    );
+}
+
+
+// ============================================================================
+// Flatten
+// ============================================================================
+
+TEST(TensorFlattenTest, BasicFlatten)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    tensor.flatten();
+
+    EXPECT_EQ(tensor.ndim(), 1);
+    EXPECT_EQ(tensor.shape()[0], 24);
+    EXPECT_EQ(tensor.size(), 24);
+}
+
+TEST(TensorFlattenTest, FlattenDoesNotChangeData)
+{
+    Tensor<int> tensor({2, 2, 2});
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = static_cast<int>(i + 1);
+    }
+
+    int* old_data = tensor.data();
+
+    tensor.flatten();
+
+    EXPECT_EQ(tensor.data(), old_data);
+
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(
+            tensor.data()[i],
+            static_cast<int>(i + 1)
+        );
+    }
+}
+
+
+// ============================================================================
+// Transpose
+// ============================================================================
+
+TEST(TensorTransposeTest, Basic2DTranspose)
+{
+    Tensor<int> tensor({2, 3});
+
+    /*
+        1 2 3
+        4 5 6
+    */
+
+    tensor(0, 0) = 1;
+    tensor(0, 1) = 2;
+    tensor(0, 2) = 3;
+    tensor(1, 0) = 4;
+    tensor(1, 1) = 5;
+    tensor(1, 2) = 6;
+
+    Tensor<int> result = tensor.transpose(0, 1);
+
+    EXPECT_EQ(result.shape()[0], 3);
+    EXPECT_EQ(result.shape()[1], 2);
+
+    /*
+        1 4
+        2 5
+        3 6
+    */
+
+    EXPECT_EQ(result(0, 0), 1);
+    EXPECT_EQ(result(0, 1), 4);
+
+    EXPECT_EQ(result(1, 0), 2);
+    EXPECT_EQ(result(1, 1), 5);
+
+    EXPECT_EQ(result(2, 0), 3);
+    EXPECT_EQ(result(2, 1), 6);
+}
+
+TEST(TensorTransposeTest, Basic3DTranspose)
+{
+    Tensor<int> tensor({2, 2, 3});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 2; ++j) {
+            for (std::size_t k = 0; k < 3; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor.transpose(0, 2);
+
+    EXPECT_EQ(result.shape()[0], 3);
+    EXPECT_EQ(result.shape()[1], 2);
+    EXPECT_EQ(result.shape()[2], 2);
+
+    EXPECT_EQ(result(0, 0, 0), 1);
+    EXPECT_EQ(result(0, 0, 1), 7);
+
+    EXPECT_EQ(result(0, 1, 0), 4);
+    EXPECT_EQ(result(0, 1, 1), 10);
+
+    EXPECT_EQ(result(1, 0, 0), 2);
+    EXPECT_EQ(result(1, 0, 1), 8);
+
+    EXPECT_EQ(result(2, 1, 0), 6);
+    EXPECT_EQ(result(2, 1, 1), 12);
+}
+
+TEST(TensorTransposeTest, WrongDimensionThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.transpose(0, 3),
+        std::out_of_range
+    );
+}
+
+
+// ============================================================================
+// Permute
+// ============================================================================
+
+TEST(TensorPermuteTest, Basic3DPermute)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            for (std::size_t k = 0; k < 4; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor.permute({2, 0, 1});
+
+    // {2,3,4} -> {4,2,3}
+
+    EXPECT_EQ(result.shape()[0], 4);
+    EXPECT_EQ(result.shape()[1], 2);
+    EXPECT_EQ(result.shape()[2], 3);
+
+    // old(i,j,k) -> new(k,i,j)
+
+    EXPECT_EQ(result(0, 0, 0), tensor(0, 0, 0));
+    EXPECT_EQ(result(3, 0, 2), tensor(0, 2, 3));
+    EXPECT_EQ(result(0, 1, 0), tensor(1, 0, 0));
+    EXPECT_EQ(result(3, 1, 2), tensor(1, 2, 3));
+}
+
+TEST(TensorPermuteTest, IdentityPermutation)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = static_cast<int>(i + 1);
+    }
+
+    Tensor<int> result = tensor.permute({0, 1, 2});
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(result.data()[i], tensor.data()[i]);
+    }
+}
+
+TEST(TensorPermuteTest, WrongNumberOfDimensionsThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.permute({0, 1}),
+        std::invalid_argument
+    );
+}
+
+TEST(TensorPermuteTest, DimensionOutOfRangeThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.permute({0, 1, 3}),
+        std::out_of_range
+    );
+}
+
+TEST(TensorPermuteTest, DuplicateDimensionThrows)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    EXPECT_THROW(
+        tensor.permute({0, 0, 2}),
+        std::invalid_argument
+    );
+}
+
+TEST(TensorPermuteTest, Double3DPermute)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            for (std::size_t k = 0; k < 4; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor.permute({2, 0, 1});
+    result = result.permute({1, 2, 0});
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(result.data()[i], tensor.data()[i]);
+    }
+}
+
+TEST(FlattenReshapeTest, ReshapeFlattenReshape)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            for (std::size_t k = 0; k < 4; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor;
+
+    result.reshape(4, 6);
+    result.flatten();
+    result.reshape(2, 3, 4);
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(result.data()[i], tensor.data()[i]);
+    }
+}
+
+// ============================================================================
+// Shape invariants / edge cases
+// ============================================================================
+
+TEST(TensorPermuteInvariantTest, InversePermutationRestoresTensor)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = static_cast<int>(i + 1);
+    }
+
+    Tensor<int> result = tensor.permute({2, 0, 1});
+    result = result.permute({1, 2, 0});
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(result.data()[i], tensor.data()[i]);
+    }
+}
+
+TEST(TensorReshapeInvariantTest, ReshapeFlattenReshapeRestoresTensor)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        tensor.data()[i] = static_cast<int>(i + 1);
+    }
+
+    Tensor<int> original = tensor;
+
+    tensor.reshape(4, 6);
+    tensor.flatten();
+    tensor.reshape(2, 3, 4);
+
+    EXPECT_EQ(tensor.shape(), original.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor.data()[i], original.data()[i]);
+    }
+}
+
+TEST(TensorTransposeEdgeTest, EqualSizedAxesStillMoveData)
+{
+    Tensor<int> tensor({2, 2, 3});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 2; ++j) {
+            for (std::size_t k = 0; k < 3; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor.transpose(0, 1);
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    // shape тот же, но координаты 0 и 1 поменялись
+    EXPECT_EQ(result(1, 0, 2), tensor(0, 1, 2));
+    EXPECT_EQ(result(0, 1, 1), tensor(1, 0, 1));
+}
+
+TEST(TensorPermuteEdgeTest, EqualSizedAxesStillMoveData)
+{
+    Tensor<int> tensor({2, 2, 2});
+
+    int value = 1;
+
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 2; ++j) {
+            for (std::size_t k = 0; k < 2; ++k) {
+                tensor(i, j, k) = value++;
+            }
+        }
+    }
+
+    Tensor<int> result = tensor.permute({2, 0, 1});
+
+    EXPECT_EQ(result.shape(), tensor.shape());
+
+    EXPECT_EQ(result(1, 0, 1), tensor(0, 1, 1));
+    EXPECT_EQ(result(0, 1, 0), tensor(1, 0, 0));
+}
+
+TEST(TensorOneDimensionalTest, IdentityOperations)
+{
+    Tensor<int> tensor({5});
+
+    for (std::size_t i = 0; i < 5; ++i) {
+        tensor(i) = static_cast<int>(i + 1);
+    }
+
+    Tensor<int> transposed = tensor.transpose(0, 0);
+    Tensor<int> permuted = tensor.permute({0});
+
+    EXPECT_EQ(transposed.shape(), tensor.shape());
+    EXPECT_EQ(permuted.shape(), tensor.shape());
+
+    for (std::size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(transposed.data()[i], tensor.data()[i]);
+        EXPECT_EQ(permuted.data()[i], tensor.data()[i]);
+    }
+}
+
+TEST(TensorOneDimensionalTest, InvalidTransposeThrows)
+{
+    Tensor<int> tensor({5});
+
+    EXPECT_THROW(
+        tensor.transpose(0, 1),
+        std::out_of_range
+    );
+}
+
+TEST(TensorScalarTest, PermuteEmptyDimensions)
+{
+    Tensor<int> tensor({}, 42);
+
+    Tensor<int> result = tensor.permute({});
+
+    EXPECT_EQ(result.ndim(), 0);
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_FALSE(result.empty());
+    EXPECT_EQ(result.data()[0], 42);
+}
+
+TEST(TensorScalarTest, TransposeThrows)
+{
+    Tensor<int> tensor({}, 42);
+
+    EXPECT_THROW(
+        tensor.transpose(0, 0),
+        std::out_of_range
+    );
+}
+
+TEST(TensorEmptyDimensionTest, Transpose)
+{
+    Tensor<int> tensor({2, 0, 3});
+
+    Tensor<int> result = tensor.transpose(0, 2);
+
+    EXPECT_EQ(result.ndim(), 3);
+    EXPECT_EQ(result.size(), 0);
+    EXPECT_TRUE(result.empty());
+
+    EXPECT_EQ(result.shape()[0], 3);
+    EXPECT_EQ(result.shape()[1], 0);
+    EXPECT_EQ(result.shape()[2], 2);
+}
+
+TEST(TensorEmptyDimensionTest, Permute)
+{
+    Tensor<int> tensor({2, 0, 3});
+
+    Tensor<int> result = tensor.permute({1, 2, 0});
+
+    EXPECT_EQ(result.ndim(), 3);
+    EXPECT_EQ(result.size(), 0);
+    EXPECT_TRUE(result.empty());
+
+    EXPECT_EQ(result.shape()[0], 0);
+    EXPECT_EQ(result.shape()[1], 3);
+    EXPECT_EQ(result.shape()[2], 2);
+}
+
+TEST(TensorStrideTest, ThreeDimensionalStrides)
+{
+    Tensor<int> tensor({2, 3, 4});
+
+    ASSERT_EQ(tensor.strides().size(), 3);
+
+    EXPECT_EQ(tensor.strides()[0], 12);
+    EXPECT_EQ(tensor.strides()[1], 4);
+    EXPECT_EQ(tensor.strides()[2], 1);
+}
+
+TEST(TensorStrideTest, FourDimensionalStrides)
+{
+    Tensor<int> tensor({2, 3, 4, 5});
+
+    ASSERT_EQ(tensor.strides().size(), 4);
+
+    EXPECT_EQ(tensor.strides()[0], 60);
+    EXPECT_EQ(tensor.strides()[1], 20);
+    EXPECT_EQ(tensor.strides()[2], 5);
+    EXPECT_EQ(tensor.strides()[3], 1);
 }
