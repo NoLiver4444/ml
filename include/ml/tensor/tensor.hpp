@@ -5,6 +5,8 @@
 
 #include <ml/core/vector.hpp>
 
+namespace ml {
+
 template <typename T>
 class Tensor {
 private:
@@ -88,5 +90,7 @@ public:
     Tensor max(std::size_t axis, bool keepdim = false) const;
     Tensor min(std::size_t axis, bool keepdim = false) const;
 };
+
+}  // namespace ml
 
 #include "tensor.tpp"

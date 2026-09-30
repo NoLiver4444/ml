@@ -3,8 +3,10 @@
 #include <cstddef>
 #include <stdexcept>
 #include <utility>
-#include "ml/core/vector.hpp"
+#include <ml/core/vector.hpp>
 #include "tensor.hpp"
+
+namespace ml {
 
 template <typename T>
 Tensor<T>::Tensor() : data_(), shape_(), strides_() {}
@@ -217,7 +219,7 @@ Tensor<T> Tensor<T>::permute(const Vector<std::size_t>& dims) const {
     if (dims.size() != ndim()) {
         throw std::invalid_argument("Permutation rank does not match tensor rank");
     }
-    
+
     Vector<std::size_t> new_shape(shape_.size());
     Vector<bool> used(ndim(), false);
 
@@ -254,7 +256,7 @@ Tensor<T> Tensor<T>::permute(const Vector<std::size_t>& dims) const {
 
 template <typename T>
 void Tensor<T>::fill(const T& value) {
-    for (auto &i : data_) {
+    for (auto& i : data_) {
         i = value;
     }
 }
@@ -273,3 +275,32 @@ Tensor<T> Tensor<T>::operator+(const Tensor& other) const {
 
     return new_tensor;
 }
+
+template <typename T>
+Tensor<T> Tensor<T>::matmul(const Tensor& other) const {
+    if (this->ndim() != 2 || other.ndim() != 2) {
+        throw std::invalid_argument("Tensor rank != 2");
+    }
+
+    if (this->shape_[1] != other.shape_[0]) {
+        throw std::invalid_argument("Tensor shapes do not match");
+    }
+
+    Tensor<T> result({this->shape_[0], other.shape_[1]});
+
+    for (std::size_t i = 0; i < this->shape_[0]; ++i) {
+        for (std::size_t j = 0; j < other.shape_[1]; ++j) {
+            T sum{};
+
+            for (std::size_t k = 0; k < this->shape_[1]; ++k) {
+                sum += (*this)(i, k) * other(k, j);
+            }
+
+            result(i, j) = sum;
+        }
+    }
+
+    return result;
+}
+
+}  // namespace ml
