@@ -1,13 +1,13 @@
 #pragma once
 
-#include <ml/tensor/tensor.hpp>
+#include <ml/layers/layer.hpp>
 
 namespace ml {
 
 template <typename T>
-class ReLU {
+class ReLU : public Layer<T> {
 public:
-    Tensor<T> forward(const Tensor<T>& input) const;
+    Tensor<T> forward(const Tensor<T>& input) const override;
 };
 
 }  // namespace ml

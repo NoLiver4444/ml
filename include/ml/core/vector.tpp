@@ -438,12 +438,12 @@ const T* Vector<T>::begin() const noexcept {
 
 template <typename T>
 T* Vector<T>::end() noexcept {
-    return data_ + size_;
+    return data_ == nullptr ? nullptr : data_ + size_;
 }
 
 template <typename T>
 const T* Vector<T>::end() const noexcept {
-    return data_ + size_;
+    return data_ == nullptr ? nullptr : data_ + size_;
 }
 
 template <typename T>

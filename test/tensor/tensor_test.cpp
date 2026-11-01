@@ -5,14 +5,9 @@
 
 #include <stdexcept>
 #include <string>
-#include <utility>
 #include "ml/core/vector.hpp"
 
 using namespace ml;
-
-// ============================================================================
-// Constructors
-// ============================================================================
 
 TEST(TensorConstructorTest, DefaultConstructor) {
     Tensor<int> tensor;
@@ -77,10 +72,6 @@ TEST(TensorConstructorTest, EmptyDimensionTensor) {
     EXPECT_EQ(tensor.shape()[1], 0);
     EXPECT_EQ(tensor.shape()[2], 3);
 }
-
-// ============================================================================
-// at()
-// ============================================================================
 
 TEST(TensorAtTest, Read1D) {
     Tensor<int> tensor({4});
@@ -362,10 +353,6 @@ TEST(TensorTransposeTest, DoubleTransposeReturnsOriginalTensor) {
     }
 }
 
-// ============================================================================
-// Reshape
-// ============================================================================
-
 TEST(TensorReshapeTest, BasicReshape) {
     Tensor<int> tensor({2, 3});
 
@@ -414,10 +401,6 @@ TEST(TensorReshapeTest, WrongSizeThrows) {
     EXPECT_THROW(tensor.reshape(2, 4), std::invalid_argument);
 }
 
-// ============================================================================
-// Flatten
-// ============================================================================
-
 TEST(TensorFlattenTest, BasicFlatten) {
     Tensor<int> tensor({2, 3, 4});
 
@@ -445,10 +428,6 @@ TEST(TensorFlattenTest, FlattenDoesNotChangeData) {
         EXPECT_EQ(tensor.data()[i], static_cast<int>(i + 1));
     }
 }
-
-// ============================================================================
-// Transpose
-// ============================================================================
 
 TEST(TensorTransposeTest, Basic2DTranspose) {
     Tensor<int> tensor({2, 3});
@@ -523,10 +502,6 @@ TEST(TensorTransposeTest, WrongDimensionThrows) {
 
     EXPECT_THROW(tensor.transpose(0, 3), std::out_of_range);
 }
-
-// ============================================================================
-// Permute
-// ============================================================================
 
 TEST(TensorPermuteTest, Basic3DPermute) {
     Tensor<int> tensor({2, 3, 4});
@@ -639,10 +614,6 @@ TEST(FlattenReshapeTest, ReshapeFlattenReshape) {
         EXPECT_EQ(result.data()[i], tensor.data()[i]);
     }
 }
-
-// ============================================================================
-// Shape invariants / edge cases
-// ============================================================================
 
 TEST(TensorPermuteInvariantTest, InversePermutationRestoresTensor) {
     Tensor<int> tensor({2, 3, 4});
