@@ -1,15 +1,18 @@
+# Первый запуск / после изменения CMake
 cmake --preset debug
+
+# После каждого изменения C++
 cmake --build --preset debug
+
+# Все тесты
 ctest --test-dir build --output-on-failure
 
-cmake --preset asan
+# Только текущий Model
+./build/ml_tests --gtest_filter="ModelTest.*"
+
+# Форматирование
+cmake --build --preset debug --target format
+
+# Иногда проверяем память/UB
 cmake --build --preset asan
 ctest --test-dir build-asan --output-on-failure
-
-cmake --preset tidy
-cmake --build --preset tidy
-
-cmake --preset coverage
-cmake --build --preset coverage --target coverage
-
-cmake --build --preset debug --target format

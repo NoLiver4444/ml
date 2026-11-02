@@ -52,18 +52,21 @@ endif()
 # ============================================================
 # Main ML library
 #
-# Vector / Matrix / future Tensor are currently header-only.
+# Most of the library is header-only/template-based.
+# Non-template implementations are compiled here.
 # ============================================================
 
-add_library(ml INTERFACE)
+add_library(ml STATIC
+    src/models/model.cpp
+)
 
 target_include_directories(ml
-    INTERFACE
+    PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_compile_features(ml
-    INTERFACE
+    PUBLIC
         cxx_std_17
 )
 
@@ -76,7 +79,7 @@ if(ML_ENABLE_WARNINGS)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 
         target_compile_options(ml
-            INTERFACE
+            PUBLIC
                 -Wall
                 -Wextra
                 -Wpedantic
@@ -96,7 +99,7 @@ if(ML_ENABLE_WARNINGS)
     elseif(MSVC)
 
         target_compile_options(ml
-            INTERFACE
+            PUBLIC
                 /W4
                 /permissive-
         )
@@ -119,13 +122,13 @@ if(
 )
 
     target_compile_options(ml
-        INTERFACE
+        PUBLIC
             -fsanitize=address,undefined
             -fno-omit-frame-pointer
     )
 
     target_link_options(ml
-        INTERFACE
+        PUBLIC
             -fsanitize=address,undefined
             -fno-omit-frame-pointer
     )
@@ -142,14 +145,14 @@ if(
 )
 
     target_compile_options(ml
-        INTERFACE
+        PUBLIC
             --coverage
             -O0
             -g
     )
 
     target_link_options(ml
-        INTERFACE
+        PUBLIC
             --coverage
     )
 
